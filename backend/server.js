@@ -28,18 +28,17 @@ app.use(cors({
     optionsSuccessStatus: 200
 }));
 
-// MongoDB connection
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/freshcart';
+// ✅ MongoDB Atlas connection
+const MONGODB_URI = process.env.MONGO_URI; // use the same name as in .env
 mongoose.connect(MONGODB_URI, {
     serverSelectionTimeoutMS: 5000,
     maxPoolSize: 10,
 })
     .then(() => {
-        console.log('Connected to MongoDB');
+        console.log('✅ Connected to MongoDB Atlas');
     })
     .catch((error) => {
-        console.error('MongoDB connection error:', error.message);
-        console.log('Product pages will still work using the local fallback product data.');
+        console.error('❌ MongoDB connection error:', error.message);
     });
 
 // Routes
