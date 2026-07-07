@@ -1,0 +1,25 @@
+{
+  "name": "freshcart",
+  "version": "1.0.0",
+  "description": "FreshCart - Fresh Groceries E-commerce Platform",
+  "scripts": {
+    "install-all": "npm install && cd backend && npm install && cd ../frontend && npm install",
+    "dev": "concurrently \"cd backend && npm run dev\" \"cd frontend && npm run dev\"",
+    "backend": "cd backend && npm run dev",
+    "frontend": "cd frontend && npm run dev",
+    "seed": "cd backend && npm run seed",
+    "build": "cd frontend && npm run build"
+  },
+  "keywords": [
+    "ecommerce",
+    "groceries",
+    "freshcart",
+    "react",
+    "node"
+  ],
+  "author": "FreshCart Team",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^8.2.1"
+  }
+}
