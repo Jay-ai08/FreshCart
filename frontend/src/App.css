@@ -1396,7 +1396,7 @@ input[readonly] {
   }
 
   .product-body p {
-    min-height: auto;
+    min-height: 0;
   }
 
   .product-row {
