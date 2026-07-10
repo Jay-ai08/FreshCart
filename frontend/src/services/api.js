@@ -97,7 +97,33 @@ export const productsAPI = {
 
     getByCategory: (category) => cachedProductCall(`/products/category/${category}`),
 
-    getById: (id) => cachedProductCall(`/products/${id}`)
+    getById: (id) => cachedProductCall(`/products/${id}`),
+
+    create: (product) =>
+        apiCall('/products', {
+            method: 'POST',
+            body: JSON.stringify(product)
+        }).then((data) => {
+            productCache.clear();
+            return data;
+        }),
+
+    update: (id, product) =>
+        apiCall(`/products/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify(product)
+        }).then((data) => {
+            productCache.clear();
+            return data;
+        }),
+
+    remove: (id) =>
+        apiCall(`/products/${id}`, {
+            method: 'DELETE'
+        }).then((data) => {
+            productCache.clear();
+            return data;
+        })
 };
 
 // Orders API
@@ -110,7 +136,15 @@ export const ordersAPI = {
 
     getUserOrders: (userId) => apiCall(`/orders/user/${userId}`),
 
-    getById: (orderId) => apiCall(`/orders/${orderId}`)
+    getById: (orderId) => apiCall(`/orders/${orderId}`),
+
+    getAll: () => apiCall('/orders'),
+
+    updateStatus: (orderId, status) =>
+        apiCall(`/orders/${orderId}/status`, {
+            method: 'PUT',
+            body: JSON.stringify({ status })
+        })
 };
 
 // Contact API
@@ -119,6 +153,14 @@ export const contactAPI = {
         apiCall('/contact', {
             method: 'POST',
             body: JSON.stringify({ name, email, phone, subject, message })
+        }),
+
+    getAll: () => apiCall('/contacts'),
+
+    updateStatus: (id, status) =>
+        apiCall(`/contacts/${id}/status`, {
+            method: 'PUT',
+            body: JSON.stringify({ status })
         })
 };
 

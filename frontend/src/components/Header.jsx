@@ -128,6 +128,15 @@ export default function Header({ currentPath, onNavigate, cartCount }) {
                       >
                         🛒 My Cart
                       </LinkButton>
+                      {user.role === 'admin' && (
+                        <LinkButton
+                          to="/admin"
+                          onNavigate={navigate}
+                          className="dropdown-item"
+                        >
+                          Admin Panel
+                        </LinkButton>
+                      )}
                       <button
                         type="button"
                         className="dropdown-item logout"

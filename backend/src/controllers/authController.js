@@ -11,7 +11,7 @@ function hashPassword(password) {
 
 function signUser(user) {
     return jwt.sign(
-        { userId: user._id, email: user.email },
+        { userId: user._id, email: user.email, role: user.role || 'user' },
         secret,
         { expiresIn }
     );
@@ -22,8 +22,24 @@ function normalizeEmail(email) {
 }
 
 function sendAuthResponse(res, status, message, user) {
-    const token = signUser(user);
-    res.status(status).json({ message, token, user: publicUser(user) });
+    const authUser = {
+        ...user,
+        role: user.role || (configuredAdminEmails().includes(normalizeEmail(user.email)) ? 'admin' : 'user'),
+    };
+    const token = signUser(authUser);
+    res.status(status).json({ message, token, user: publicUser(authUser) });
+}
+
+function configuredAdminEmails() {
+    return String(process.env.ADMIN_EMAILS || '')
+        .split(',')
+        .map((email) => normalizeEmail(email))
+        .filter(Boolean);
+}
+
+async function resolveRole(email, hasExistingUsers) {
+    if (configuredAdminEmails().includes(email)) return 'admin';
+    return hasExistingUsers ? 'user' : 'admin';
 }
 
 async function signupLocal({ name, email, phone, password }, res) {
@@ -41,6 +57,7 @@ async function signupLocal({ name, email, phone, password }, res) {
         email: normalizedEmail,
         phone: String(phone).trim(),
         password: hashPassword(password),
+        role: await resolveRole(normalizedEmail, store.users.length > 0),
         address: '',
         city: '',
         createdAt: new Date().toISOString(),
@@ -88,11 +105,13 @@ const signup = async (req, res) => {
         }
 
         const hashedPassword = hashPassword(password);
+        const hasExistingUsers = await User.exists({});
         const user = new User({
             name: String(name).trim(),
             email: normalizedEmail,
             phone: String(phone).trim(),
-            password: hashedPassword
+            password: hashedPassword,
+            role: await resolveRole(normalizedEmail, Boolean(hasExistingUsers))
         });
 
         const savedUser = await user.save();
