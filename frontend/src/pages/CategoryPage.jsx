@@ -3,10 +3,11 @@ import ProductCard from '../components/ProductCard';
 import { categoryPageContent } from '../data/pageContent';
 import { productsAPI } from '../services/api';
 import { productsByCategory } from '../data/products';
+import { canDisplayProductImage, getAssetImage } from '../utils';
 
 export default function CategoryPage({ slug, onAddToCart }) {
-  const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const localProducts = productsByCategory[slug] || [];
+  const [products, setProducts] = useState(localProducts);
   const [error, setError] = useState('');
   
   const content = categoryPageContent[slug];
@@ -14,16 +15,15 @@ export default function CategoryPage({ slug, onAddToCart }) {
   useEffect(() => {
     async function loadProducts() {
       try {
-        setLoading(true);
+        setProducts(localProducts);
         const data = await productsAPI.getByCategory(slug);
-        setProducts(Array.isArray(data) && data.length ? data : (productsByCategory[slug] || []));
+        const liveProducts = Array.isArray(data) ? data.filter((product) => canDisplayProductImage(product.image)) : [];
+        setProducts(liveProducts.length ? liveProducts : localProducts);
         setError('');
       } catch (err) {
         setProducts(productsByCategory[slug] || []);
-        setError('Showing local products because backend is not reachable. Start the backend for live database data.');
+        setError('');
         console.error('Error loading products:', err);
-      } finally {
-        setLoading(false);
       }
     }
 
@@ -43,8 +43,11 @@ export default function CategoryPage({ slug, onAddToCart }) {
           <p>{content.intro}</p>
         </div>
         <div className="promo-panel">
-          <h2>{content.promoTitle}</h2>
-          <p>{content.promoText}</p>
+          {content.promoImage && (
+            <div className="promo-image-wrap">
+              <img src={getAssetImage(content.promoImage)} alt={content.promoTitle} />
+            </div>
+          )}
         </div>
       </section>
 
@@ -65,11 +68,7 @@ export default function CategoryPage({ slug, onAddToCart }) {
           <p>{content.collectionText}</p>
         </div>
         <div className="product-grid">
-          {loading ? (
-            <div className="empty-state">
-              <p>Loading products...</p>
-            </div>
-          ) : products.length > 0 ? (
+          {products.length > 0 ? (
             products.map((product) => (
               <ProductCard key={product.id} product={product} onAddToCart={onAddToCart} />
             ))

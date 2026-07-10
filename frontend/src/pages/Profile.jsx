@@ -4,6 +4,8 @@ import { usersAPI } from '../services/api';
 import { notifyAuthChanged } from '../utils';
 
 export default function Profile({ onNavigate }) {
+  const maxProfilePhotoBytes = 2 * 1024 * 1024;
+
   function getStoredUser() {
     try {
       return JSON.parse(localStorage.getItem('user') || 'null');
@@ -27,9 +29,14 @@ export default function Profile({ onNavigate }) {
       try {
         const latestUser = await usersAPI.getProfile(user._id);
         if (!active) return;
-        setUser(latestUser);
-        setFormData(latestUser);
-        localStorage.setItem('user', JSON.stringify(latestUser));
+        const cachedUser = getStoredUser();
+        const mergedUser = {
+          ...latestUser,
+          profilePhoto: cachedUser?.profilePhoto || latestUser.profilePhoto || ''
+        };
+        setUser(mergedUser);
+        setFormData(mergedUser);
+        localStorage.setItem('user', JSON.stringify(mergedUser));
         notifyAuthChanged();
         setError('');
       } catch (profileError) {
@@ -50,8 +57,15 @@ export default function Profile({ onNavigate }) {
     try {
       setLoading(true);
       if (user._id) {
-        const response = await usersAPI.updateProfile(user._id, formData);
-        const updatedUser = { ...user, ...response.user };
+        const profileFields = {
+          name: formData.name || '',
+          email: formData.email || '',
+          phone: formData.phone || '',
+          city: formData.city || '',
+          address: formData.address || ''
+        };
+        const response = await usersAPI.updateProfile(user._id, profileFields);
+        const updatedUser = { ...user, ...response.user, profilePhoto: user.profilePhoto || '' };
         setUser(updatedUser);
         setFormData(updatedUser);
         localStorage.setItem('user', JSON.stringify(updatedUser));
@@ -72,6 +86,48 @@ export default function Profile({ onNavigate }) {
       ...prev,
       [name]: value
     }));
+  }
+
+  function saveUserProfilePhoto(profilePhoto) {
+    const updatedUser = { ...user, profilePhoto };
+    setUser(updatedUser);
+    setFormData((prev) => ({ ...prev, profilePhoto }));
+    localStorage.setItem('user', JSON.stringify(updatedUser));
+    notifyAuthChanged();
+  }
+
+  function handlePhotoUpload(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      setError('Please upload an image file.');
+      e.target.value = '';
+      return;
+    }
+
+    if (file.size > maxProfilePhotoBytes) {
+      setError('Profile photo must be smaller than 2 MB.');
+      e.target.value = '';
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      saveUserProfilePhoto(reader.result);
+      setError('');
+      e.target.value = '';
+    };
+    reader.onerror = () => {
+      setError('Could not read that photo. Please try another image.');
+      e.target.value = '';
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function handleRemovePhoto() {
+    saveUserProfilePhoto('');
+    setError('');
   }
 
   function handleLogout() {
@@ -120,8 +176,25 @@ export default function Profile({ onNavigate }) {
       <section className="profile-section">
         <div className="profile-card">
           <div className="profile-header-content">
-            <div className="profile-avatar">
-              {user.name.charAt(0).toUpperCase()}
+            <div className="profile-photo-block">
+              <div className={`profile-avatar ${user.profilePhoto ? 'has-photo' : ''}`}>
+                {user.profilePhoto ? (
+                  <img src={user.profilePhoto} alt={`${user.name || 'User'} profile`} />
+                ) : (
+                  user.name?.charAt(0).toUpperCase() || 'U'
+                )}
+              </div>
+              <div className="profile-photo-actions">
+                <label className="photo-upload-button">
+                  Upload Photo
+                  <input type="file" accept="image/*" onChange={handlePhotoUpload} />
+                </label>
+                {user.profilePhoto && (
+                  <button type="button" className="photo-remove-button" onClick={handleRemovePhoto}>
+                    Remove
+                  </button>
+                )}
+              </div>
             </div>
             <div className="profile-info">
               <h2>{user.name}</h2>
@@ -326,6 +399,12 @@ export default function Profile({ onNavigate }) {
           border-bottom: 1px solid #eee;
         }
 
+        .profile-photo-block {
+          display: flex;
+          align-items: center;
+          gap: 16px;
+        }
+
         .profile-avatar {
           width: 80px;
           height: 80px;
@@ -337,6 +416,66 @@ export default function Profile({ onNavigate }) {
           justify-content: center;
           font-size: 32px;
           font-weight: bold;
+          flex: 0 0 auto;
+          overflow: hidden;
+        }
+
+        .profile-avatar.has-photo {
+          background: #f8fafc;
+          border: 2px solid #e5e7eb;
+        }
+
+        .profile-avatar img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          display: block;
+        }
+
+        .profile-photo-actions {
+          display: flex;
+          align-items: flex-start;
+          flex-direction: column;
+          gap: 8px;
+        }
+
+        .photo-upload-button,
+        .photo-remove-button {
+          min-height: 34px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 999px;
+          padding: 0 14px;
+          font-size: 13px;
+          font-weight: 700;
+          cursor: pointer;
+          transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+        }
+
+        .photo-upload-button {
+          color: #ffffff;
+          background: #dc2626;
+        }
+
+        .photo-upload-button:hover {
+          background: #b91c1c;
+        }
+
+        .photo-upload-button input {
+          display: none;
+        }
+
+        .photo-remove-button {
+          color: #475569;
+          background: #ffffff;
+          border: 1px solid #e2e8f0;
+        }
+
+        .photo-remove-button:hover {
+          color: #dc2626;
+          border-color: rgba(220, 38, 38, 0.28);
+          background: #fff7f2;
         }
 
         .profile-info h2 {
@@ -527,10 +666,19 @@ export default function Profile({ onNavigate }) {
             gap: 14px;
           }
 
+          .profile-photo-block {
+            width: 100%;
+            justify-content: space-between;
+          }
+
           .profile-avatar {
             width: 64px;
             height: 64px;
             font-size: 26px;
+          }
+
+          .profile-photo-actions {
+            align-items: flex-end;
           }
 
           .profile-actions .primary-button,

@@ -23,10 +23,8 @@ export function Login({ onNavigate }) {
       localStorage.setItem('authToken', response.token);
       localStorage.setItem('user', JSON.stringify(response.user));
       notifyAuthChanged();
-      setMessage('Login successful! Redirecting...');
-      setTimeout(() => {
-        onNavigate('/');
-      }, 1500);
+      setMessage('');
+      onNavigate('/');
     } catch (err) {
       setError(err.message || 'Login failed. Please try again.');
     } finally {
@@ -51,7 +49,7 @@ export function Login({ onNavigate }) {
           <button type="button" className="text-button">Forgot password?</button>
         </div>
         <button type="submit" className="primary-button full-width" disabled={loading}>
-          {loading ? 'Logging in...' : 'Login'}
+          Login
         </button>
         {error && <p className="error-text">{error}</p>}
         {message && <p className="success-text">{message}</p>}
@@ -91,10 +89,8 @@ export function SignUp({ onNavigate }) {
       localStorage.setItem('authToken', response.token);
       localStorage.setItem('user', JSON.stringify(response.user));
       notifyAuthChanged();
-      setMessage('Account created successfully! Redirecting...');
-      setTimeout(() => {
-        onNavigate('/');
-      }, 1500);
+      setMessage('');
+      onNavigate('/');
     } catch (err) {
       setError(err.message || 'Signup failed. Please try again.');
     } finally {
@@ -120,7 +116,7 @@ export function SignUp({ onNavigate }) {
         <label className="checkbox-label"><input type="checkbox" checked={showPassword} onChange={(event) => setShowPassword(event.target.checked)} /> Show password</label>
         <label className="checkbox-label"><input type="checkbox" /> Send me fresh offers and updates</label>
         <button type="submit" className="primary-button full-width" disabled={loading}>
-          {loading ? 'Creating Account...' : 'Create Account'}
+          Create Account
         </button>
         {error && <p className="error-text">{error}</p>}
         {message && <p className="success-text">{message}</p>}

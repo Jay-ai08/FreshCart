@@ -34,6 +34,8 @@ export default function Checkout({ cartItems, totals, onNavigate, onPlaceOrder }
       const formData = new FormData(event.currentTarget);
 
       const orderData = {
+        userId: user._id,
+        email: user.email,
         items: cartItems.map((item) => ({
           productId: item.id,
           name: item.name,
@@ -44,6 +46,7 @@ export default function Checkout({ cartItems, totals, onNavigate, onPlaceOrder }
         deliveryDetails: {
           firstName: formData.get('firstName'),
           lastName: formData.get('lastName'),
+          email: user.email,
           phone: formData.get('phone'),
           address: formData.get('address'),
           city: formData.get('city'),
@@ -114,7 +117,7 @@ export default function Checkout({ cartItems, totals, onNavigate, onPlaceOrder }
             <h2>Delivery details</h2>
             <div className="form-grid two-cols">
               <label>First name<input type="text" name="firstName" defaultValue={user.name?.split(' ')[0] || ''} required /></label>
-              <label>Last name<input type="text" name="lastName" defaultValue={user.name?.split(' ').slice(1).join(' ') || ''} required /></label>
+              <label>Last name<input type="text" name="lastName" defaultValue={user.name?.split(' ').slice(1).join(' ') || ''} /></label>
             </div>
             <label>Email<input type="email" name="email" value={user.email || ''} readOnly /></label>
             <label>Phone number<input type="tel" name="phone" defaultValue={user.phone || ''} required /></label>

@@ -9,7 +9,6 @@ import Cart from './pages/Cart';
 import Checkout from './pages/Checkout';
 import Profile from './pages/Profile';
 import ViewOrders from './pages/ViewOrders';
-import Admin from './pages/Admin';
 import { Login, SignUp } from './pages/Auth';
 import { categories } from './data/products';
 import './App.css';
@@ -29,6 +28,7 @@ function normalizePath(pathname) {
     '/contact.html': '/contact',
     '/cart.html': '/cart',
     '/orders.html': '/orders',
+    '/admin.html': '/admin',
     '/profile.html': '/profile',
     '/admin.html': '/admin',
     '/checkout.html': '/checkout',
@@ -121,7 +121,6 @@ export default function App() {
     if (path === '/contact') return <Contact />;
     if (path === '/profile') return <Profile onNavigate={navigate} />;
     if (path === '/orders') return <ViewOrders onNavigate={navigate} />;
-    if (path === '/admin') return <Admin onNavigate={navigate} />;
     if (path === '/cart') {
       return (
         <Cart
