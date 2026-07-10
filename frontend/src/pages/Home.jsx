@@ -1,15 +1,30 @@
 import { categories } from '../data/products';
 import LinkButton from '../components/LinkButton';
+import { getAssetImage } from '../utils';
+
+const heroProducts = [
+  { name: 'Fresh apples', image: 'Fruits&Vegetables/apple.jpeg' },
+  { name: 'Broccoli', image: 'Fruits&Vegetables/brocli.jpeg' },
+  { name: 'Chilled drinks', image: 'Beverages/fanta.jpeg' },
+  { name: 'Dairy milk', image: 'Dairy/milk1.jpeg' },
+  { name: 'Crunchy snacks', image: 'snacks/lays1.jpeg' },
+  { name: 'Cheese', image: 'Dairy/cheese.jpeg' },
+];
+
+const categoryImages = {
+  'fruits-vegetables': 'Fruits&Vegetables/apple.jpeg',
+  beverages: 'Beverages/fanta.jpeg',
+  dairy: 'Dairy/milk1.jpeg',
+  snacks: 'snacks/pringles1.jpeg',
+};
 
 export default function Home({ onNavigate }) {
   return (
     <main>
       <section className="hero-section">
-        <div className="hero-orb orb-one" />
-        <div className="hero-orb orb-two" />
         <div className="hero-layout">
           <div className="hero-copy">
-            <span className="section-pill">⚡ Fast delivery • Fresh every day</span>
+            <span className="section-pill">Fast delivery - Fresh every day</span>
             <h1>
               Fresh & Organic <span>Groceries</span> to Your Doorstep
             </h1>
@@ -24,22 +39,21 @@ export default function Home({ onNavigate }) {
             </div>
             <div className="hero-stats">
               <div><strong>24/7</strong><span>Delivery</span></div>
-              <div><strong>4.9★</strong><span>Rated Fresh</span></div>
+              <div><strong>4.9</strong><span>Rated Fresh</span></div>
               <div><strong>500+</strong><span>Daily Essentials</span></div>
             </div>
           </div>
 
-          <div className="hero-visual" aria-label="Fresh grocery display">
-            <div className="grocery-bowl">
-              <span>🍎</span>
-              <span>🥦</span>
-              <span>🥛</span>
-              <span>🥤</span>
-              <span>🍿</span>
-              <span>🥭</span>
+          <div className="hero-visual" aria-label="Fresh grocery product display">
+            <div className="hero-product-grid">
+              {heroProducts.map((product) => (
+                <div className="hero-product-tile" key={product.name}>
+                  <img src={getAssetImage(product.image)} alt={product.name} />
+                </div>
+              ))}
             </div>
-            <div className="floating-card">
-              <strong>Today’s pick</strong>
+            <div className="hero-pick-card">
+              <strong>Today's pick</strong>
               <span>Organic fruits & premium dairy</span>
             </div>
           </div>
@@ -61,7 +75,10 @@ export default function Home({ onNavigate }) {
               onNavigate={onNavigate}
               className="category-card"
             >
-              <span className="category-emoji">{category.emoji}</span>
+              <span className="category-image-wrap">
+                <img src={getAssetImage(categoryImages[category.slug])} alt={category.title} className="category-image" />
+              </span>
+              <span className="category-badge">{category.badge}</span>
               <h3>{category.title}</h3>
               <p>{category.subtitle}</p>
             </LinkButton>

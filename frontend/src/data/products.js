@@ -570,7 +570,7 @@ export const productsByCategory = {
       "tag": "Premium",
       "desc": "Help in digestion strengthens the immune system.",
       "price": 99,
-      "image": "Dairy/curd1.jpeg",
+      "image": "Dairy/Curd1.jpeg",
       "alt": "Cheddar Cheese",
       "category": "dairy"
     },

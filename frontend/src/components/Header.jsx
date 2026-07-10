@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { notifyAuthChanged } from '../utils';
 import { categories } from '../data/products';
 import LinkButton from './LinkButton';
+import freshCartLogo from '../assets/freshcart-logo.jpg';
 
 export default function Header({ currentPath, onNavigate, cartCount }) {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -59,7 +60,7 @@ export default function Header({ currentPath, onNavigate, cartCount }) {
     <header className="site-header">
       <div className="nav-shell">
         <LinkButton to="/" onNavigate={navigate} className="brand-logo" aria-label="FreshCart Home">
-          <span>Fresh</span>Cart
+          <img src={freshCartLogo} alt="FreshCart" />
         </LinkButton>
 
         <button
@@ -98,7 +99,13 @@ export default function Header({ currentPath, onNavigate, cartCount }) {
                     onClick={() => setShowUserMenu(!showUserMenu)}
                     aria-expanded={showUserMenu}
                   >
-                    <span className="user-avatar">{user.name?.charAt(0).toUpperCase() || 'U'}</span>
+                    <span className={`user-avatar ${user.profilePhoto ? 'has-photo' : ''}`}>
+                      {user.profilePhoto ? (
+                        <img src={user.profilePhoto} alt={`${user.name || 'User'} profile`} />
+                      ) : (
+                        user.name?.charAt(0).toUpperCase() || 'U'
+                      )}
+                    </span>
                     <span className="user-name">{user.name}</span>
                   </button>
 
@@ -120,6 +127,13 @@ export default function Header({ currentPath, onNavigate, cartCount }) {
                         className="dropdown-item"
                       >
                         📦 My Orders
+                      </LinkButton>
+                      <LinkButton
+                        to="/admin"
+                        onNavigate={navigate}
+                        className="dropdown-item"
+                      >
+                        Admin Panel
                       </LinkButton>
                       <LinkButton
                         to="/cart"
@@ -190,6 +204,20 @@ export default function Header({ currentPath, onNavigate, cartCount }) {
           color: white;
           font-weight: 600;
           font-size: 14px;
+          overflow: hidden;
+          flex: 0 0 auto;
+        }
+
+        .user-avatar.has-photo {
+          background: #f8fafc;
+          border: 1px solid #e2e8f0;
+        }
+
+        .user-avatar img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          display: block;
         }
 
         .user-name {

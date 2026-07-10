@@ -108,9 +108,17 @@ export const ordersAPI = {
             body: JSON.stringify(orderData)
         }),
 
+    getAll: () => apiCall('/orders'),
+
     getUserOrders: (userId) => apiCall(`/orders/user/${userId}`),
 
-    getById: (orderId) => apiCall(`/orders/${orderId}`)
+    getById: (orderId) => apiCall(`/orders/${orderId}`),
+
+    updateStatus: (orderId, status) =>
+        apiCall(`/orders/${orderId}/status`, {
+            method: 'PUT',
+            body: JSON.stringify({ status })
+        })
 };
 
 // Contact API

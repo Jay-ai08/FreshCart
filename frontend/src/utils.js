@@ -3,6 +3,10 @@ const imageModules = import.meta.glob('./assets/images/**/*.{png,jpg,jpeg,webp,s
   import: 'default',
 });
 
+const imageModuleLookup = Object.fromEntries(
+  Object.entries(imageModules).map(([key, value]) => [key.toLowerCase(), value])
+);
+
 const placeholderSvg = encodeURIComponent(`
 <svg xmlns="http://www.w3.org/2000/svg" width="640" height="480" viewBox="0 0 640 480">
   <rect width="640" height="480" rx="40" fill="#f8fafc"/>
@@ -16,7 +20,13 @@ export const FALLBACK_IMAGE = `data:image/svg+xml;charset=UTF-8,${placeholderSvg
 
 export function getAssetImage(path) {
   if (!path) return FALLBACK_IMAGE;
-  return imageModules[`./assets/images/${path}`] || FALLBACK_IMAGE;
+  if (/^(https?:)?\/\//.test(path) || path.startsWith('/')) return path;
+  const imageKey = `./assets/images/${path}`;
+  return imageModules[imageKey] || imageModuleLookup[imageKey.toLowerCase()] || FALLBACK_IMAGE;
+}
+
+export function canDisplayProductImage(path) {
+  return getAssetImage(path) !== FALLBACK_IMAGE;
 }
 
 export function formatPrice(price) {
