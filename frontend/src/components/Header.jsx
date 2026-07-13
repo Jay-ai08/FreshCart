@@ -129,13 +129,6 @@ export default function Header({ currentPath, onNavigate, cartCount }) {
                         📦 My Orders
                       </LinkButton>
                       <LinkButton
-                        to="/admin"
-                        onNavigate={navigate}
-                        className="dropdown-item"
-                      >
-                        Admin Panel
-                      </LinkButton>
-                      <LinkButton
                         to="/cart"
                         onNavigate={navigate}
                         className="dropdown-item"

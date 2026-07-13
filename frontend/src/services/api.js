@@ -138,7 +138,13 @@ export const ordersAPI = {
 
     getUserOrders: (userId) => apiCall(`/orders/user/${userId}`),
 
-    getById: (orderId) => apiCall(`/orders/${orderId}`)
+    getById: (orderId) => apiCall(`/orders/${orderId}`),
+
+    updateStatus: (orderId, status) =>
+        apiCall(`/orders/${orderId}/status`, {
+            method: 'PUT',
+            body: JSON.stringify({ status })
+        })
 };
 
 // Contact API
@@ -158,6 +164,21 @@ export const contactAPI = {
         })
 };
 
+// Payment API (Razorpay)
+export const paymentAPI = {
+    createOrder: (amount) =>
+        apiCall('/payment/create-order', {
+            method: 'POST',
+            body: JSON.stringify({ amount })
+        }),
+
+    verify: (payload) =>
+        apiCall('/payment/verify', {
+            method: 'POST',
+            body: JSON.stringify(payload)
+        })
+};
+
 // Users API
 export const usersAPI = {
     getProfile: (userId) => apiCall(`/users/${userId}`),
@@ -174,5 +195,6 @@ export default {
     productsAPI,
     ordersAPI,
     contactAPI,
+    paymentAPI,
     usersAPI
 };

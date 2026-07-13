@@ -29,7 +29,7 @@ app.use(cors({
 }));
 
 // ✅ MongoDB Atlas connection
-const MONGODB_URI = process.env.MONGO_URI; // use the same name as in .env
+const MONGODB_URI = process.env.MONGODB_URI; // matches the name in .env
 mongoose.connect(MONGODB_URI, {
     serverSelectionTimeoutMS: 5000,
     maxPoolSize: 10,
@@ -47,6 +47,7 @@ const productRoutes = require('./src/routes/productRoutes');
 const orderRoutes = require('./src/routes/orderRoutes');
 const contactRoutes = require('./src/routes/contactRoutes');
 const userRoutes = require('./src/routes/userRoutes');
+const paymentRoutes = require('./src/routes/paymentRoutes');
 
 // API routes
 app.use('/api/auth', authRoutes);
@@ -54,6 +55,7 @@ app.use('/api', productRoutes);
 app.use('/api', orderRoutes);
 app.use('/api', contactRoutes);
 app.use('/api', userRoutes);
+app.use('/api', paymentRoutes);
 
 // Health check
 app.get('/health', (req, res) => {

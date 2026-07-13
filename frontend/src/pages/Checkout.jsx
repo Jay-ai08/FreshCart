@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import LinkButton from '../components/LinkButton';
 import { formatPrice } from '../utils';
-import { ordersAPI } from '../services/api';
+import { ordersAPI, paymentAPI } from '../services/api';
 
 function getStoredUser() {
   try {
@@ -11,6 +11,20 @@ function getStoredUser() {
   }
 }
 
+function loadRazorpayScript() {
+  return new Promise((resolve) => {
+    if (window.Razorpay) {
+      resolve(true);
+      return;
+    }
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+}
+
 export default function Checkout({ cartItems, totals, onNavigate, onPlaceOrder }) {
   const [placed, setPlaced] = useState(false);
   const [payment, setPayment] = useState('card');
@@ -18,6 +32,29 @@ export default function Checkout({ cartItems, totals, onNavigate, onPlaceOrder }
   const [loading, setLoading] = useState(false);
   const [user] = useState(getStoredUser);
   const isLoggedIn = Boolean(user?._id && localStorage.getItem('authToken'));
+
+  function buildBaseOrderData(deliveryDetails) {
+    return {
+      userId: user._id,
+      email: user.email,
+      items: cartItems.map((item) => ({
+        productId: item.id,
+        name: item.name,
+        price: item.price,
+        quantity: item.quantity,
+        image: item.image,
+      })),
+      deliveryDetails,
+      paymentMethod: payment,
+    };
+  }
+
+  async function finalizeOrder(orderData, formEl) {
+    await ordersAPI.create(orderData);
+    setPlaced(true);
+    onPlaceOrder();
+    formEl?.reset();
+  }
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -29,40 +66,91 @@ export default function Checkout({ cartItems, totals, onNavigate, onPlaceOrder }
     }
 
     setLoading(true);
+    const formEl = event.currentTarget;
+    const formData = new FormData(formEl);
+
+    const deliveryDetails = {
+      firstName: formData.get('firstName'),
+      lastName: formData.get('lastName'),
+      email: user.email,
+      phone: formData.get('phone'),
+      address: formData.get('address'),
+      city: formData.get('city'),
+      pincode: formData.get('pincode'),
+      instructions: formData.get('instructions'),
+    };
 
     try {
-      const formData = new FormData(event.currentTarget);
+      // Cash on Delivery skips the payment gateway entirely.
+      if (payment === 'cod') {
+        await finalizeOrder(buildBaseOrderData(deliveryDetails), formEl);
+        return;
+      }
 
-      const orderData = {
-        userId: user._id,
-        email: user.email,
-        items: cartItems.map((item) => ({
-          productId: item.id,
-          name: item.name,
-          price: item.price,
-          quantity: item.quantity,
-          image: item.image,
-        })),
-        deliveryDetails: {
-          firstName: formData.get('firstName'),
-          lastName: formData.get('lastName'),
+      // Card / UPI go through Razorpay Checkout.
+      const scriptLoaded = await loadRazorpayScript();
+      if (!scriptLoaded) {
+        setError('Could not load the payment gateway. Please check your connection and try again.');
+        setLoading(false);
+        return;
+      }
+
+      const razorpayOrder = await paymentAPI.createOrder(totals.total);
+
+      const rzp = new window.Razorpay({
+        key: razorpayOrder.keyId,
+        amount: razorpayOrder.amount,
+        currency: razorpayOrder.currency,
+        order_id: razorpayOrder.orderId,
+        name: 'FreshCart',
+        description: 'Order payment',
+        prefill: {
+          name: `${deliveryDetails.firstName} ${deliveryDetails.lastName}`.trim(),
           email: user.email,
-          phone: formData.get('phone'),
-          address: formData.get('address'),
-          city: formData.get('city'),
-          pincode: formData.get('pincode'),
-          instructions: formData.get('instructions'),
+          contact: deliveryDetails.phone,
         },
-        paymentMethod: payment,
-      };
+        theme: { color: '#e63946' },
+        method: payment === 'upi' ? { upi: true } : { card: true },
+        handler: async (response) => {
+          try {
+            const verification = await paymentAPI.verify({
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+            });
 
-      await ordersAPI.create(orderData);
-      setPlaced(true);
-      onPlaceOrder();
-      event.currentTarget.reset();
+            if (!verification.verified) {
+              setError('Payment verification failed. If any amount was deducted, it will be refunded automatically.');
+              setLoading(false);
+              return;
+            }
+
+            const orderData = {
+              ...buildBaseOrderData(deliveryDetails),
+              paymentVerified: true,
+              razorpayOrderId: response.razorpay_order_id,
+              razorpayPaymentId: response.razorpay_payment_id,
+            };
+
+            await finalizeOrder(orderData, formEl);
+          } catch (err) {
+            setError(err.message || 'Payment succeeded but order could not be saved. Contact support with your payment ID.');
+            setLoading(false);
+          }
+        },
+        modal: {
+          ondismiss: () => setLoading(false),
+        },
+      });
+
+      rzp.on('payment.failed', () => {
+        setError('Payment failed. Please try again or choose a different payment method.');
+        setLoading(false);
+      });
+
+      rzp.open();
     } catch (err) {
       setError(err.message || 'Failed to place order. Please try again.');
-    } finally {
       setLoading(false);
     }
   }
@@ -143,7 +231,9 @@ export default function Checkout({ cartItems, totals, onNavigate, onPlaceOrder }
             </div>
             {error && <p className="error-text">{error}</p>}
             <button type="submit" className="primary-button full-width" disabled={loading}>
-              {loading ? 'Placing Order...' : 'Place Order'}
+              {loading
+                ? (payment === 'cod' ? 'Placing Order...' : 'Waiting for Payment...')
+                : (payment === 'cod' ? 'Place Order' : `Pay ${formatPrice(totals.total)} & Place Order`)}
             </button>
           </form>
 

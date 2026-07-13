@@ -41,6 +41,19 @@ const orderSchema = new mongoose.Schema({
         enum: ['card', 'upi', 'cod'],
         required: true
     },
+    paymentStatus: {
+        type: String,
+        enum: ['pending', 'paid', 'failed'],
+        default: 'pending'
+    },
+    razorpayOrderId: {
+        type: String,
+        default: ''
+    },
+    razorpayPaymentId: {
+        type: String,
+        default: ''
+    },
     subtotal: Number,
     tax: Number,
     total: Number,

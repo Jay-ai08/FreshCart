@@ -8,7 +8,7 @@ function toNumber(value) {
 }
 
 function cleanOrderPayload(req, res) {
-    const { items, deliveryDetails, paymentMethod } = req.body;
+    const { items, deliveryDetails, paymentMethod, razorpayOrderId, razorpayPaymentId, paymentVerified } = req.body;
     const userId = req.user?.userId;
     const email = req.user?.email;
 
@@ -30,6 +30,12 @@ function cleanOrderPayload(req, res) {
     const validPaymentMethods = ['card', 'upi', 'cod'];
     if (!validPaymentMethods.includes(paymentMethod)) {
         res.status(400).json({ error: 'Invalid payment method' });
+        return null;
+    }
+
+    // Card and UPI go through Razorpay — require a verified payment before the order is accepted.
+    if (paymentMethod !== 'cod' && !paymentVerified) {
+        res.status(400).json({ error: 'Payment could not be verified. Please try again.' });
         return null;
     }
 
@@ -66,6 +72,9 @@ function cleanOrderPayload(req, res) {
             instructions: String(deliveryDetails.instructions || '').trim(),
         },
         paymentMethod,
+        paymentStatus: paymentMethod === 'cod' ? 'pending' : 'paid',
+        razorpayOrderId: razorpayOrderId || '',
+        razorpayPaymentId: razorpayPaymentId || '',
         subtotal,
         tax,
         total,

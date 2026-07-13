@@ -7,6 +7,7 @@ export function Login({ onNavigate }) {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [loginAs, setLoginAs] = useState('user');
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -20,8 +21,21 @@ export function Login({ onNavigate }) {
 
     try {
       const response = await authAPI.login(email, password);
+      const actualRole = response.user?.role === 'admin' ? 'admin' : 'user';
+
+      if (loginAs === 'admin' && actualRole !== 'admin') {
+        setError('This account does not have admin access. Login as a user instead.');
+        setLoading(false);
+        return;
+      }
+
+      const sessionUser = {
+        ...response.user,
+        role: loginAs === 'admin' ? actualRole : 'user',
+      };
+
       localStorage.setItem('authToken', response.token);
-      localStorage.setItem('user', JSON.stringify(response.user));
+      localStorage.setItem('user', JSON.stringify(sessionUser));
       notifyAuthChanged();
       setMessage('');
       onNavigate('/');
@@ -42,6 +56,28 @@ export function Login({ onNavigate }) {
       <form className="auth-card" onSubmit={handleSubmit}>
         <h1>Login to FreshCart</h1>
         <p>Use your account to continue shopping for fresh groceries.</p>
+
+        <div className="login-role-toggle" role="radiogroup" aria-label="Login as">
+          <button
+            type="button"
+            role="radio"
+            aria-checked={loginAs === 'user'}
+            className={`role-option ${loginAs === 'user' ? 'active' : ''}`}
+            onClick={() => setLoginAs('user')}
+          >
+            👤 User
+          </button>
+          <button
+            type="button"
+            role="radio"
+            aria-checked={loginAs === 'admin'}
+            className={`role-option ${loginAs === 'admin' ? 'active' : ''}`}
+            onClick={() => setLoginAs('admin')}
+          >
+            🛡️ Admin
+          </button>
+        </div>
+
         <label>Email address<input type="email" name="email" required /></label>
         <label>Password<input type="password" name="password" required /></label>
         <div className="form-inline">
@@ -49,12 +85,42 @@ export function Login({ onNavigate }) {
           <button type="button" className="text-button">Forgot password?</button>
         </div>
         <button type="submit" className="primary-button full-width" disabled={loading}>
-          Login
+          {loading ? 'Logging in...' : `Login as ${loginAs === 'admin' ? 'Admin' : 'User'}`}
         </button>
         {error && <p className="error-text">{error}</p>}
         {message && <p className="success-text">{message}</p>}
         <p className="auth-switch">New to FreshCart? <LinkButton to="/signup" onNavigate={onNavigate}>Create an account</LinkButton></p>
       </form>
+
+      <style>{`
+        .login-role-toggle {
+          display: flex;
+          gap: 8px;
+          margin-bottom: 16px;
+          background: #f5f5f5;
+          padding: 4px;
+          border-radius: 8px;
+        }
+
+        .role-option {
+          flex: 1;
+          padding: 10px 12px;
+          border: none;
+          background: none;
+          border-radius: 6px;
+          cursor: pointer;
+          font-weight: 500;
+          font-size: 14px;
+          color: #555;
+          transition: background-color 0.2s, color 0.2s;
+        }
+
+        .role-option.active {
+          background: white;
+          color: #e63946;
+          box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+        }
+      `}</style>
     </AuthLayout>
   );
 }

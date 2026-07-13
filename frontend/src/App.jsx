@@ -11,6 +11,7 @@ import Profile from './pages/Profile';
 import ViewOrders from './pages/ViewOrders';
 import { Login, SignUp } from './pages/Auth';
 import { categories } from './data/products';
+import Admin from './pages/Admin';
 import './App.css';
 
 const STORAGE_KEY = 'freshcart-react-cart';
@@ -121,6 +122,7 @@ export default function App() {
     if (path === '/contact') return <Contact />;
     if (path === '/profile') return <Profile onNavigate={navigate} />;
     if (path === '/orders') return <ViewOrders onNavigate={navigate} />;
+    if (path === '/admin') return <Admin onNavigate={navigate} />;
     if (path === '/cart') {
       return (
         <Cart
