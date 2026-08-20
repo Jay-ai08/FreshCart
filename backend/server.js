@@ -27,10 +27,12 @@ app.use(cors({
     credentials: true,
     optionsSuccessStatus: 200
 }));
+const dns = require('dns');
+dns.setServers(['1.1.1.1', '8.8.8.8']);
 
 // ✅ MongoDB Atlas connection
 const MONGODB_URI = process.env.MONGODB_URI; // matches the name in .env
-mongoose.connect(MONGODB_URI, {
+mongoose.connect(process.env.MONGODB_URI, {
     serverSelectionTimeoutMS: 5000,
     maxPoolSize: 10,
 })

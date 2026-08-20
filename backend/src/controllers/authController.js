@@ -11,6 +11,7 @@ function hashPassword(password) {
 
 function signUser(user) {
     return jwt.sign(
+        
         { userId: user._id, email: user.email, role: user.role || 'user' },
         secret,
         { expiresIn }
@@ -40,6 +41,30 @@ function configuredAdminEmails() {
 async function resolveRole(email, hasExistingUsers) {
     if (configuredAdminEmails().includes(email)) return 'admin';
     return hasExistingUsers ? 'user' : 'admin';
+}
+
+// Promotes an already-existing account to admin if its email was added to
+// ADMIN_EMAILS after the account was created (role only gets set at signup by default).
+async function syncAdminRole(user) {
+    const shouldBeAdmin = configuredAdminEmails().includes(normalizeEmail(user.email));
+    if (!shouldBeAdmin || user.role === 'admin') {
+        return user;
+    }
+
+    const updatedUser = { ...user, role: 'admin' };
+
+    if (!isDatabaseReady()) {
+        const store = readStore();
+        const index = store.users.findIndex((item) => String(item._id) === String(user._id));
+        if (index !== -1) {
+            store.users[index].role = 'admin';
+            writeStore(store);
+        }
+        return updatedUser;
+    }
+
+    await User.updateOne({ _id: user._id }, { role: 'admin' });
+    return updatedUser;
 }
 
 async function signupLocal({ name, email, phone, password }, res) {
@@ -77,7 +102,8 @@ async function loginLocal({ email, password }, res) {
         return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    return sendAuthResponse(res, 200, 'Login successful', user);
+    const syncedUser = await syncAdminRole(user);
+    return sendAuthResponse(res, 200, 'Login successful', syncedUser);
 }
 
 // Sign up
@@ -146,7 +172,8 @@ const login = async (req, res) => {
             return res.status(401).json({ error: 'Invalid credentials' });
         }
 
-        return sendAuthResponse(res, 200, 'Login successful', user);
+        const syncedUser = await syncAdminRole(user);
+        return sendAuthResponse(res, 200, 'Login successful', syncedUser);
     } catch (error) {
         res.status(500).json({ error: error.message || 'Login failed' });
     }
